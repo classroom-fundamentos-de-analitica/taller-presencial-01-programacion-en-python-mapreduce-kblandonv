@@ -13,8 +13,25 @@
 #     ('text2.txt'. 'hypotheses.')
 #   ]
 #
+
+import glob
+import fileinput
 def load_input(input_directory):
-    pass
+    """
+    Load input files from the specified directory.
+
+    Args:
+        input_directory (str): The directory path containing the input files.
+
+    Returns:
+        list: A list of tuples, where each tuple contains the filename and a line from the file.
+    """
+    filenames = glob.glob(input_directory + '/*.*')
+    sequence = []
+    with fileinput.input(files=filenames) as f:
+        for line in f:
+            sequence.append((f.filename(), line))
+    return sequence
 
 
 #
@@ -30,7 +47,18 @@ def load_input(input_directory):
 #   ]
 #
 def mapper(sequence):
-    pass
+    """
+    Maps each word in the input sequence to a key-value pair of (word, 1).
+
+    Args:
+        sequence (list): The input sequence of lines.
+
+    Returns:
+        list: A new sequence of key-value pairs, where each key is a word and the value is 1.
+    """
+    new_sequence = [(word.lower().replace(".","").replace(",",""), 1) for _, line in sequence for word in line.split()]
+    return new_sequence
+
 
 
 #
@@ -45,7 +73,17 @@ def mapper(sequence):
 #   ]
 #
 def shuffle_and_sort(sequence):
-    pass
+    """
+    Sorts the given sequence based on the first element of each item.
+
+    Args:
+        sequence (list): The sequence to be sorted.
+
+    Returns:
+        list: The sorted sequence.
+    """
+    sequence = sorted(sequence, key=lambda x: x[0])
+    return sequence
 
 
 #
@@ -53,17 +91,47 @@ def shuffle_and_sort(sequence):
 # reduce los valores asociados a cada clave sumandolos. Como resultado, por
 # ejemplo, la reducción indica cuantas veces aparece la palabra analytics en el
 # texto.
-#
+from itertools import groupby
 def reducer(sequence):
-    pass
+    """
+    Reduces the sequence by grouping elements with the same key and summing their values.
+
+    Args:
+        sequence (list): The input sequence to be reduced.
+
+    Returns:
+        list: The reduced sequence with grouped elements and summed values.
+    """
+    new_sequence = []
+    for k, g, in groupby(sequence, lambda x: x[0]):
+        key = k
+        value =  sum(x[1] for x in g)
+        new_sequence.append((key, value))
+    return new_sequence
 
 
 #
 # Escriba la función create_ouptput_directory que recibe un nombre de directorio
 # y lo crea. Si el directorio existe, la función falla.
 #
+import os
 def create_ouptput_directory(output_directory):
-    pass
+    """
+    Creates a new directory for the output files.
+
+    Args:
+        output_directory (str): The path of the output directory.
+
+    Raises:
+        Exception: If the directory already exists.
+
+    Returns:
+        None
+    """
+    if os.path.isdir(output_directory):
+        raise Exception("El directorio ya existe")
+    os.mkdir(output_directory)
+
 
 
 #
@@ -75,7 +143,20 @@ def create_ouptput_directory(output_directory):
 # separados por un tabulador.
 #
 def save_output(output_directory, sequence):
-    pass
+    """
+    Save the output sequence to a file in the specified output directory.
+
+    Args:
+        output_directory (str): The directory where the output file will be saved.
+        sequence (iterable): The sequence of key-value pairs to be written to the file.
+
+    Returns:
+        None
+    """
+    filename = os.path.join(output_directory, "part-00000")
+    with open(filename, "w") as f:
+        for key, value in sequence:
+            f.write(f"{key}\t{value}\n")
 
 
 #
@@ -83,14 +164,40 @@ def save_output(output_directory, sequence):
 # entregado como parámetro.
 #
 def create_marker(output_directory):
-    pass
+    """
+    Create a marker file in the specified output directory.
+
+    Args:
+        output_directory (str): The path to the output directory.
+
+    Returns:
+        None
+    """
+    with open(os.path.join(output_directory, "_SUCCESS"), "w") as f:
+        f.write("")
 
 
 #
 # Escriba la función job, la cual orquesta las funciones anteriores.
 #
 def job(input_directory, output_directory):
-    pass
+    """
+    Orchestrates the word count job.
+
+    Args:
+        input_directory (str): The path to the input directory.
+        output_directory (str): The path to the output directory.
+
+    Returns:
+        None
+    """
+    sequence = load_input(input_directory)
+    sequence = mapper(sequence)
+    sequence = shuffle_and_sort(sequence)
+    sequence = reducer(sequence)
+    create_ouptput_directory(output_directory)
+    save_output(output_directory, sequence)
+    create_marker(output_directory)
 
 
 if __name__ == "__main__":
